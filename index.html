@@ -143,18 +143,18 @@
   }
   
   async function reverseGeocodeWithGoogle(lat, lon) {
-    // Use Google's reverse geocoding API for better English translations
+      // Use Google's reverse geocoding API for better English translations
     // Add more result types to get better city resolution for imprecise locations
     const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${GOOGLE_GEO_KEY}&language=en&result_type=locality|administrative_area_level_2|administrative_area_level_1|country`);
-    const data = await res.json();
+      const data = await res.json();
     
     // Check for API quota/permission issues first
     if (data.status === 'REQUEST_DENIED' || data.status === 'OVER_QUERY_LIMIT') {
       console.warn('Google Geocoding API access issue:', data.status, data.error_message);
       throw new Error(`Google API ${data.status}: ${data.error_message || 'Access denied or quota exceeded'}`);
     }
-    
-    if (data.status === 'OK' && data.results.length > 0) {
+      
+      if (data.status === 'OK' && data.results.length > 0) {
       // Collect all components from all results to make a consistent decision
       let allCities = [];
       let allStates = [];
@@ -198,10 +198,10 @@
       
       console.log('All collected cities:', allCities);
       console.log('All collected states:', allStates);
-      
-      // Store Japan status globally for weather icon selection
-      window.isLocationInJapan = isJapan;
-      
+        
+        // Store Japan status globally for weather icon selection
+        window.isLocationInJapan = isJapan;
+        
       // Deduplicate and prioritize cities
       const uniqueCities = [];
       allCities.forEach(cityObj => {
@@ -229,7 +229,7 @@
       // Get the best state (most common one)
       const stateNames = allStates.map(s => s.name);
       const mostCommonState = stateNames.length > 0 ? stateNames[0] : '';
-      
+            
       // Select final city and state with consistent redundancy rules
       let finalCity = '';
       let finalState = '';
@@ -266,7 +266,7 @@
             } else {
               finalState = '';
               console.log('Excluding generic state for consistency:', mostCommonState);
-            }
+        }
           }
         }
         
@@ -282,27 +282,27 @@
       
       // Build final address string
       const parts = [finalCity, finalState, country].filter(Boolean);
-      
+        
       console.log('Google final location parts (consistent):', parts);
-      return parts.join(", ");
-    }
-    
-    // Safer fallback - extract only city, state, country from formatted address
+        return parts.join(", ");
+      }
+      
+      // Safer fallback - extract only city, state, country from formatted address
     if (data.results && data.results.length > 0) {
-      const formattedAddr = data.results[0].formatted_address;
-      const addressParts = formattedAddr.split(', ');
-      
-      // Try to extract only the broader location components (last 2-3 parts typically)
-      // Skip detailed addresses like street numbers, building names, etc.
-      const broadParts = addressParts.slice(-3).filter(part => {
-        // Filter out postal codes, detailed street addresses
-        return !part.match(/^\d+/) && // No leading numbers
-               !part.includes('#') && // No building numbers
-               !part.includes('Suite') && // No suite numbers
-               !part.includes('Floor') && // No floor numbers
-               part.length > 2; // Reasonable length
-      });
-      
+        const formattedAddr = data.results[0].formatted_address;
+        const addressParts = formattedAddr.split(', ');
+        
+        // Try to extract only the broader location components (last 2-3 parts typically)
+        // Skip detailed addresses like street numbers, building names, etc.
+        const broadParts = addressParts.slice(-3).filter(part => {
+          // Filter out postal codes, detailed street addresses
+          return !part.match(/^\d+/) && // No leading numbers
+                 !part.includes('#') && // No building numbers
+                 !part.includes('Suite') && // No suite numbers
+                 !part.includes('Floor') && // No floor numbers
+                 part.length > 2; // Reasonable length
+        });
+        
       // Additional redundancy check for formatted address parts
       const filteredParts = [];
       broadParts.forEach((part, index) => {
@@ -326,21 +326,21 @@
   }
   
   async function reverseGeocodeWithNominatim(lat, lon) {
-    // Fallback to Nominatim with additional language parameters
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=en&addressdetails=1&extratags=1`);
-    const geo = await res.json();
-    const addr = geo.address;
-    
-    console.log('Nominatim address components:', addr);
-    
-    // Check if Japan in Nominatim response
-    window.isLocationInJapan = addr.country_code === 'jp' || addr.country === 'Japan' || addr.country === '日本';
-    
+      // Fallback to Nominatim with additional language parameters
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=en&addressdetails=1&extratags=1`);
+      const geo = await res.json();
+      const addr = geo.address;
+      
+      console.log('Nominatim address components:', addr);
+      
+      // Check if Japan in Nominatim response
+      window.isLocationInJapan = addr.country_code === 'jp' || addr.country === 'Japan' || addr.country === '日本';
+      
     // Enhanced Nominatim city name selection with priority-based approach
-    let city = '';
-    let state = '';
-    let country = addr.country || '';
-    
+      let city = '';
+      let state = '';
+      let country = addr.country || '';
+      
     // Collect all potential city names from Nominatim with priorities
     let potentialCities = [];
     
@@ -351,7 +351,7 @@
     if (addr.town && !addr.town.includes('Capital') && !addr.town.includes('City of')) {
       potentialCities.push({ name: addr.town, priority: 1, type: 'town' });
     }
-    if (addr.village && !addr.village.includes('Capital') && !addr.village.includes('City of')) {
+      if (addr.village && !addr.village.includes('Capital') && !addr.village.includes('City of')) {
       potentialCities.push({ name: addr.village, priority: 1, type: 'village' });
     }
     
@@ -404,7 +404,7 @@
         // Set state normally if we found a real city
         if (addr.state && addr.state !== city && !addr.state.includes('Capital') && !addr.state.includes('City of')) {
           state = addr.state;
-        }
+      }
       }
     } else if (potentialCities.length > 0) {
       // Use unfiltered if filtered list is empty
@@ -441,11 +441,11 @@
           state = '';
         }
       }
-    }
-    
-    const parts = [city, state, country].filter(Boolean);
-    console.log('Nominatim final parts:', parts);
-    return parts.join(", ");
+      }
+      
+      const parts = [city, state, country].filter(Boolean);
+      console.log('Nominatim final parts:', parts);
+      return parts.join(", ");
   }
   
   // Weather condition mapping for Open-Meteo weather codes
